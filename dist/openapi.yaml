@@ -29,24 +29,14 @@ tags:
    - name: public
     description: all users can access these endpoints
 paths:
-  /:
+  /auth:
     get:
       tags: [public]
-      summary: For logged out users, Set homepage with 3 random recipes on the left side where a button refreshes the page with 3 new random recipes, if logged in will see on the right side 3 last seen recipes.
+      summary: For logged out users, Set homepage with 3 random recipes on the left side where a button refreshes the page with 3 new random recipes, if user is logged in will see on the right side 3 last seen recipes.
       operationId: getHomePage
       responses:
         '200':
-          description: Home page content with 3 random recipes
-
-
-  /recipes/random:
-    get:
-      tags: [public]
-      summary: Return 3 random recipes
-      operationId: getHomePage
-      responses:
-        '200':
-          description: Home page content with 3 random recipes
+          description: Home page content with 3 random recipes, and last seen recipes if logged in
 
   /about:
     get:
@@ -56,126 +46,63 @@ paths:
       responses:
         '200':
           description: About page info
-  /users:
+
+  /users/{username}:
     get:
+      summary: Get user details by username
+      description: Retrieve detailed information about a specific user.
       tags:
         - users
-      summary: Searches for users
-      operationId: searchUsers
-      description: |
-        Allows searching users by providing search criteria. Users can be filtered by 
-        username, first name, last name, etc. Pagination options are available.
       parameters:
-        - in: query
-          name: searchString
-          description: Optional search string to filter users based on their username, first name, or last name.
-          required: false
+        - name: username
+          in: path
+          required: true
+          description: The username of the user to retrieve.
           schema:
             type: string
-        - in: query
-          name: skip
-          description: Number of records to skip for pagination.
-          required: false
-          schema:
-            type: integer
-            format: int32
-            minimum: 0
-        - in: query
-          name: limit
-          description: Maximum number of records to return (for pagination).
-          required: false
-          schema:
-            type: integer
-            format: int32
-            minimum: 1
-            maximum: 50
       responses:
         '200':
-          description: A list of users matching the search criteria.
+          description: User details successfully retrieved
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-        '400':
-          description: Bad input parameter.
-    post:
-      tags:
-        - admins
-      summary: Creates a new user
-      operationId: createUser
-      description: |
-        Allows admins to create a new user. All required fields (username, first name, 
-        last name, country, password, etc.) must be provided.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/User'
-        description: User details for creating a new user.
-      responses:
-        '201':
-          description: User created successfully.
-        '400':
-          description: Invalid input or missing required fields.
-        '409':
-          description: A user with the same username already exists.
-        
-        
- 
-  /recipes/search:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User not found
+
+  /users/exists/{username}:
     get:
+      summary: Check if a username is already taken
+      description: Returns whether a given username is already in use.
       tags:
-        - recipes
-      summary: Search for recipes with optional filters
-      operationId: searchRecipes
-      description: |
-        Search recipes by name and optionally filter by cuisine, diet, intolerance, and results number, latest search results are displayed if they are available.
+        - users
       parameters:
-        - name: query
-          in: query
-          required: false
+        - name: username
+          in: path
+          required: true
+          description: The username to check availability for.
           schema:
             type: string
-          description: Recipe name or keywords to search for
-        - name: cuisine
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Type of cuisine to filter by (e.g., Italian, Mexican)
-        - name: diet
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Type of diet to filter by (e.g., vegetarian, keto)
-        - name: intolerances
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Comma-separated list of intolerances (e.g., gluten, dairy)
-        - name: number
-          in: query
-          required: false
-          schema:
-            type: integer
-            enum: [5, 10, 15]
-            default: 5
-          description: Number of recipes to return (default is 5)
       responses:
         '200':
-          description: List of recipes matching the search criteria
+          description: Username availability status
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RecipePreview'
-        '400':
-          description: Invalid search parameters
+                type: object
+                properties:
+                  exists:
+                    type: boolean
+                    example: true
+        
   
    
   /users/familyRecipes:
@@ -207,11 +134,23 @@ paths:
         '201':
           description: Family recipe created
 
+  /users/myRecipes:
+    get:
+      tags: [recipes]
+      summary: Get user's personal recipes
+      responses:
+        '200':
+          description: A list of personal recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
   /users/favoriteRecipes:
     get:
       tags: [recipes]
       summary: Get user's favorite recipes
- 
       responses:
         '200':
           description: A list of favorite recipes
@@ -357,15 +296,70 @@ paths:
       responses:
         '200':
           description: Logged out successfully
-          
-  /user/greeting:
+        '500':
+          description: Server error while logging out
+
+  /auth/countries:
     get:
-      tags: [auth]
-      summary: Get personalized greeting message
-      operationId: getGreeting
+      summary: Get list of all countries
+      description: >
+        Returns a sorted list of country names.  
+        Data is fetched from [REST Countries API](https://restcountries.com/v3.1/all).
+      tags:
+        - countries
       responses:
         '200':
-          description: Greeting message with first name
+          description: List of country names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example:
+                  - Afghanistan
+                  - Albania
+                  - Algeria
+        '500':
+          description: Server error while fetching country data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Failed to fetch countries
+
+  /auth/session:
+    get:
+      summary: Get current session details
+      description: >
+        Returns the username of the currently logged-in user if a valid session exists.  
+        If no session is active, responds with 401 Unauthorized.
+      tags:
+        - auth
+      responses:
+        '200':
+          description: Session is active
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                    example: johndoe
+        '401':
+          description: User not logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: User not logged in
 
   /recipes/create:
     post:
@@ -715,3 +709,66 @@ components:
               amount:
                 type: string
                 example: 1 large
+
+  /recipes/random:
+    get:
+      tags: [public]
+      summary: Return 3 random recipes
+      operationId: getHomePage
+      responses:
+        '200':
+          description: Home page content with 3 random recipes
+
+  /recipes/search:
+    get:
+      tags:
+        - public
+        - recipes
+      summary: Search for recipes with optional filters
+      operationId: searchRecipes
+      description: |
+        Search recipes by name and optionally filter by cuisine, diet, intolerance, and results number, latest search results are displayed if they are available.
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Recipe name or keywords to search for
+        - name: cuisine
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Type of cuisine to filter by (e.g., Italian, Mexican)
+        - name: diet
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Type of diet to filter by (e.g., vegetarian, keto)
+        - name: intolerances
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of intolerances (e.g., gluten, dairy)
+        - name: number
+          in: query
+          required: false
+          schema:
+            type: integer
+            enum: [5, 10, 15]
+            default: 5
+          description: Number of recipes to return (default is 5)
+      responses:
+        '200':
+          description: List of recipes matching the search criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+        '400':
+          description: Invalid search parameters
