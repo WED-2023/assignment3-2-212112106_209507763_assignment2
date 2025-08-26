@@ -139,5 +139,4 @@ router.get('/auth/session', (req, res) => {
   }
 });
 
-
 module.exports = router;

@@ -5,8 +5,6 @@ const recipe_utils = require("./utils/recipes_utils");
 
 
 
-
-
 //last clicked 2nd version abed 03072025 below
 /**
  * Get the user's 3 last viewed recipes
@@ -51,25 +49,7 @@ router.get('/myRecipes', async (req, res, next) => {
   }
 });
 
-
-/**
- * Authenticate all incoming requests by middleware
- * user_id --> username
- */ 
-// router.use(async function (req, res, next) {
-//   if (req.session && req.session.username) {
-//     DButils.execQuery("SELECT username FROM users").then((users) => {
-//       if (users.find((x) => x.username === req.session.username)) {
-//         req.username = req.session.username;
-//         next();
-//       }
-//     }).catch(err => next(err));
-//   } else {
-//     res.sendStatus(401);
-//   }
-// });
-
-
+// Middleware to check for authenticated user on all routes below
 router.use(async function (req, res, next) {
   if (!req.session?.username || req.session.username === "") {
     return res.status(404).send("Unauthorized from 3.2 express server: No session username found.");
@@ -128,26 +108,6 @@ router.get("/exists/:username", async (req, res, next) => {
     const exists = await user_utils.isUsernameTaken(req.params.username);
     res.send({ exists });
   } catch (error) {
-    next(error);
-  }
-});
-
-
-//Dummy test: problem was position of the function (should come above the router.use) and the functionaility, just check req.session?.username instead of DB
-router.get('/blah', async (req, res, next) => {
-  try {
-    const username = req.session?.username;
-    if (!username) return res.status(401).send("User not logged in");
-
-    // Get favorite recipe IDs
-    const recipes = await recipe_utils.getFavoriteRecipes(username);
-
-    // Map to plain array of IDs
-    const recipeIds = recipes.map(row => row.recipe_id);
-
-    res.status(200).json(recipeIds); // Return as JSON array
-  } catch (error) {
-    console.error("Error in /favoriteRecipes:", error);
     next(error);
   }
 });
