@@ -20,7 +20,10 @@ app.use(
     cookie: {
       httpOnly: true, //changed to true by abed to prevent acces by JS, and increase security 03072025 fix cookie login mismatch
       ephemeral: true, // when true, cookie will be deleted when browser is closed
-      secure: false,   // ✅ required on HTTPS by abed 03072025 TURNED OFF TO FALSE
+      // secure: false,   // ✅ required on HTTPS by abed 03072025 TURNED OFF TO FALSE
+
+       secure: false, //by Abed 25082025 for HTTPS
+      // sameSite: "none", //cross-site cookie 
     }
     //the session will be extended by activeDuration milliseconds
   })

@@ -3,6 +3,8 @@ servers:
   # Added by API Auto Mocking Plugin
   - description: Localhost (dev)
     url: http://localhost:3000
+  - description: Production
+    url: https://goldfarb-showgan.cs.bgu.ac.il/
 info:
   description: This is an API designed for users to create, share and explore recipes and create family recipes
   version: 1.0.2
@@ -20,6 +22,12 @@ tags:
     description: Secured Admin-only calls
   - name: developers
     description: Operations available to regular developers
+   - name: auth
+    description: Authentication and user management
+  - name: users
+    description: User management and search, authenticated users can access these points
+   - name: public
+    description: all users can access these endpoints
 paths:
   /:
     get:
